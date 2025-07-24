@@ -101,7 +101,7 @@ with st.sidebar:
     """)
     
     # Debug info
-    with st.expander("🔧 Debug Info"):
+    with st.expander("Debug Info"):
         st.write(f"LangChain Community Available: {LANGCHAIN_COMMUNITY_AVAILABLE}")
 
 # Initialize session state
@@ -222,7 +222,7 @@ Answer based only on the provided context:"""
         return None
 
 # File upload section
-st.header("📄 Document Upload")
+    st.header("Document Upload")
 uploaded_file = st.file_uploader(
     "Choose a document",
     type=['pdf', 'txt'],
@@ -246,17 +246,17 @@ if uploaded_file and openai_api_key:
                 if qa_chain:
                     st.session_state.vectorstore = vectorstore
                     st.session_state.qa_chain = qa_chain
-                    st.success(f"✅ Document '{uploaded_file.name}' processed successfully! You can now ask questions.")
+                    st.success(f"Document '{uploaded_file.name}' processed successfully! You can now ask questions.")
                     
                     # Display document info
-                    st.info(f"📊 Document contains {len(documents)} pages/sections")
+                    st.info(f"Document contains {len(documents)} pages/sections")
 
 elif uploaded_file and not openai_api_key:
-    st.warning(⚠️ Please enter your OpenAI API key in the sidebar to process the document.")
+    st.warning("Please enter your OpenAI API key in the sidebar to process the document.")
 
 # Chat interface
 if st.session_state.qa_chain:
-    st.header("💬 Chat with your Document")
+    st.header("Chat with your Document")
     
     # Display chat messages
     for message in st.session_state.messages:
@@ -265,7 +265,7 @@ if st.session_state.qa_chain:
             
             # Show sources if available
             if message["role"] == "assistant" and "sources" in message:
-                with st.expander("📚 Sources"):
+                with st.expander("Sources"):
                     for i, source in enumerate(message["sources"]):
                         st.markdown(f"**Source {i+1}:**")
                         st.markdown(f"```\n{source.page_content[:300]}...\n```")
@@ -299,7 +299,7 @@ if st.session_state.qa_chain:
                     
                     # Display sources
                     if source_documents:
-                        with st.expander("📚 Sources"):
+                        with st.expander("Sources"):
                             for i, source in enumerate(source_documents):
                                 st.markdown(f"**Source {i+1}:**")
                                 st.markdown(f"```\n{source.page_content[:300]}...\n```")
@@ -313,13 +313,13 @@ if st.session_state.qa_chain:
                     })
     
     # Clear chat button
-    if st.button("🗑️ Clear Chat History"):
+    if st.button("Clear Chat History"):
         st.session_state.messages = []
         st.rerun()
 
 else:
-    st.header("💬 Chat Interface")
-    st.info("👆 Please upload a document first to start chatting!")
+    st.header("Chat Interface")
+    st.info("Please upload a document first to start chatting!")
 
 # Footer
 st.markdown("---")
