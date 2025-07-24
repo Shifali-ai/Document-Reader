@@ -3,54 +3,68 @@ import os
 import tempfile
 import io
 
-# Try different import patterns for different LangChain versions
+# Streamlit Cloud compatible imports
 try:
+    # Try the newer package structure first
     from langchain_community.document_loaders import PyPDFLoader, TextLoader
+    from langchain_community.vectorstores import FAISS
+    LANGCHAIN_COMMUNITY_AVAILABLE = True
 except ImportError:
+    # Fallback to older structure
     try:
         from langchain.document_loaders import PyPDFLoader, TextLoader
+        from langchain.vectorstores import FAISS
+        LANGCHAIN_COMMUNITY_AVAILABLE = False
     except ImportError:
-        st.error("Could not import document loaders. Please install langchain-community or langchain.")
+        st.error("""
+        **Missing Required Packages**
+        
+        Please ensure your requirements.txt contains:
+        ```
+        streamlit
+        langchain
+        langchain-community
+        langchain-openai
+        openai
+        faiss-cpu
+        pypdf
+        python-dotenv
+        ```
+        """)
         st.stop()
 
+# Text splitter imports
 try:
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 except ImportError:
     try:
         from langchain.text_splitter import RecursiveCharacterTextSplitter
     except ImportError:
-        st.error("Could not import text splitter. Please install langchain-text-splitters or langchain.")
+        st.error("Could not import text splitter. Please check your langchain installation.")
         st.stop()
 
+# OpenAI imports
 try:
     from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 except ImportError:
     try:
-        from langchain.embeddings import OpenAIEmbeddings
+        from langchain.embeddings.openai import OpenAIEmbeddings
         from langchain.chat_models import ChatOpenAI
     except ImportError:
-        st.error("Could not import OpenAI components. Please install langchain-openai or langchain.")
-        st.stop()
+        try:
+            from langchain.embeddings import OpenAIEmbeddings
+            from langchain.llms import OpenAI as ChatOpenAI
+        except ImportError:
+            st.error("Could not import OpenAI components. Please check your openai and langchain installation.")
+            st.stop()
 
-try:
-    from langchain_community.vectorstores import FAISS
-except ImportError:
-    try:
-        from langchain.vectorstores import FAISS
-    except ImportError:
-        st.error("Could not import FAISS. Please install langchain-community or langchain.")
-        st.stop()
-
+# Core langchain imports
 try:
     from langchain.chains import RetrievalQA
-    from langchain_core.prompts import PromptTemplate
+    from langchain.prompts import PromptTemplate
 except ImportError:
-    try:
-        from langchain.chains import RetrievalQA
-        from langchain.prompts import PromptTemplate
-    except ImportError:
-        st.error("Could not import chains or prompts. Please install langchain.")
-        st.stop()
+    st.error("Could not import core langchain components.")
+    st.stop()
 
 # Page configuration
 st.set_page_config(
@@ -85,6 +99,10 @@ with st.sidebar:
     3. Wait for processing to complete
     4. Ask questions about the document
     """)
+    
+    # Debug info
+    with st.expander("🔧 Debug Info"):
+        st.write(f"LangChain Community Available: {LANGCHAIN_COMMUNITY_AVAILABLE}")
 
 # Initialize session state
 if "messages" not in st.session_state:
@@ -133,7 +151,7 @@ def create_vectorstore(documents):
         texts = text_splitter.split_documents(documents)
         
         # Create embeddings
-        embeddings = OpenAIEmbeddings()
+        embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
         
         # Create vector store
         vectorstore = FAISS.from_documents(texts, embeddings)
@@ -168,17 +186,23 @@ Answer based only on the provided context:"""
             input_variables=["context", "question"]
         )
         
-        # Create LLM - try different parameter names for compatibility
+        # Create LLM with explicit API key
         try:
             llm = ChatOpenAI(
                 temperature=0,
-                model="gpt-3.5-turbo"
+                model="gpt-3.5-turbo",
+                openai_api_key=openai_api_key
             )
         except Exception:
-            llm = ChatOpenAI(
-                temperature=0,
-                model_name="gpt-3.5-turbo"
-            )
+            try:
+                llm = ChatOpenAI(
+                    temperature=0,
+                    model_name="gpt-3.5-turbo",
+                    openai_api_key=openai_api_key
+                )
+            except Exception as e:
+                st.error(f"Error creating ChatOpenAI: {str(e)}")
+                return None
         
         # Create QA chain
         qa_chain = RetrievalQA.from_chain_type(
@@ -228,7 +252,7 @@ if uploaded_file and openai_api_key:
                     st.info(f"📊 Document contains {len(documents)} pages/sections")
 
 elif uploaded_file and not openai_api_key:
-    st.warning("⚠️ Please enter your OpenAI API key in the sidebar to process the document.")
+    st.warning(⚠️ Please enter your OpenAI API key in the sidebar to process the document.")
 
 # Chat interface
 if st.session_state.qa_chain:
