@@ -1,13 +1,56 @@
 import streamlit as st
 import os
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.vectorstores import FAISS
-from langchain.chains import RetrievalQA
-from langchain_core.prompts import PromptTemplate
 import tempfile
 import io
+
+# Try different import patterns for different LangChain versions
+try:
+    from langchain_community.document_loaders import PyPDFLoader, TextLoader
+except ImportError:
+    try:
+        from langchain.document_loaders import PyPDFLoader, TextLoader
+    except ImportError:
+        st.error("Could not import document loaders. Please install langchain-community or langchain.")
+        st.stop()
+
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    try:
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+    except ImportError:
+        st.error("Could not import text splitter. Please install langchain-text-splitters or langchain.")
+        st.stop()
+
+try:
+    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+except ImportError:
+    try:
+        from langchain.embeddings import OpenAIEmbeddings
+        from langchain.chat_models import ChatOpenAI
+    except ImportError:
+        st.error("Could not import OpenAI components. Please install langchain-openai or langchain.")
+        st.stop()
+
+try:
+    from langchain_community.vectorstores import FAISS
+except ImportError:
+    try:
+        from langchain.vectorstores import FAISS
+    except ImportError:
+        st.error("Could not import FAISS. Please install langchain-community or langchain.")
+        st.stop()
+
+try:
+    from langchain.chains import RetrievalQA
+    from langchain_core.prompts import PromptTemplate
+except ImportError:
+    try:
+        from langchain.chains import RetrievalQA
+        from langchain.prompts import PromptTemplate
+    except ImportError:
+        st.error("Could not import chains or prompts. Please install langchain.")
+        st.stop()
 
 # Page configuration
 st.set_page_config(
@@ -125,11 +168,17 @@ Answer based only on the provided context:"""
             input_variables=["context", "question"]
         )
         
-        # Create LLM
-        llm = ChatOpenAI(
-            temperature=0,
-            model="gpt-3.5-turbo"
-        )
+        # Create LLM - try different parameter names for compatibility
+        try:
+            llm = ChatOpenAI(
+                temperature=0,
+                model="gpt-3.5-turbo"
+            )
+        except Exception:
+            llm = ChatOpenAI(
+                temperature=0,
+                model_name="gpt-3.5-turbo"
+            )
         
         # Create QA chain
         qa_chain = RetrievalQA.from_chain_type(
