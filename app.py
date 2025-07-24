@@ -1,12 +1,11 @@
 import streamlit as st
 import os
-from langchain.document_loaders import PyPDFLoader, TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.chat_models import ChatOpenAI
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import tempfile
 import io
 
@@ -129,7 +128,7 @@ Answer based only on the provided context:"""
         # Create LLM
         llm = ChatOpenAI(
             temperature=0,
-            model_name="gpt-3.5-turbo"
+            model="gpt-3.5-turbo"
         )
         
         # Create QA chain
